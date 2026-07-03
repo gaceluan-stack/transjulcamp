@@ -4,7 +4,7 @@
 
 const API_BASE = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
     ? "/api"
-    : "https://transjulcamp-backend.onrender.com/api"; // Reemplazar con la URL real de Render/Railway al desplegar
+    : "https://transjulcamp.onrender.com/api";
 
 // App State
 let state = {
