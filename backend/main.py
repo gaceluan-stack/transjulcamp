@@ -121,7 +121,7 @@ class PaymentSchema(BaseModel):
 @app.middleware("http")
 async def db_session_middleware(request: Request, call_next):
     path = request.url.path
-    if path.startswith("/api") and path != "/api/login":
+    if path.startswith("/api") and path != "/api/login" and request.method != "OPTIONS":
         auth_header = request.headers.get("Authorization")
         if not auth_header or not auth_header.startswith("Bearer "):
             from fastapi.responses import JSONResponse
