@@ -34,11 +34,7 @@ class PostgresCursorWrapper:
         self.cursor = cursor
         self._lastrowid = None
 
-    def execute(self, query, params=None):
-        # Translate PRAGMA
-        if "PRAGMA" in query.upper():
-            return
-            
+    def _translate(self, query):
         # Translate autoincrement
         if "INTEGER PRIMARY KEY AUTOINCREMENT" in query.upper():
             query = query.replace("INTEGER PRIMARY KEY AUTOINCREMENT", "SERIAL PRIMARY KEY")
@@ -48,8 +44,23 @@ class PostgresCursorWrapper:
         # Translate INSERT OR IGNORE
         if "INSERT OR IGNORE INTO" in query.upper():
             query = query.replace("INSERT OR IGNORE INTO", "INSERT INTO")
-            if "USERS" in query.upper():
+            q_upper = query.upper()
+            if "USERS" in q_upper:
                 query = query.rstrip().rstrip(";") + " ON CONFLICT (username) DO NOTHING;"
+            elif "CONTACTS" in q_upper:
+                query = query.rstrip().rstrip(";") + " ON CONFLICT (id) DO NOTHING;"
+            elif "DRIVERS" in q_upper:
+                query = query.rstrip().rstrip(";") + " ON CONFLICT (id) DO NOTHING;"
+            elif "PRODUCTS" in q_upper:
+                query = query.rstrip().rstrip(";") + " ON CONFLICT (id) DO NOTHING;"
+            elif "MACHINERY" in q_upper:
+                query = query.rstrip().rstrip(";") + " ON CONFLICT (plate_code) DO NOTHING;"
+            elif "INVOICES" in q_upper:
+                query = query.rstrip().rstrip(";") + " ON CONFLICT (id) DO NOTHING;"
+            elif "WORK_GUIDES" in q_upper:
+                query = query.rstrip().rstrip(";") + " ON CONFLICT (guide_number) DO NOTHING;"
+            elif "SCHEDULES" in q_upper:
+                query = query.rstrip().rstrip(";") + " ON CONFLICT (id) DO NOTHING;"
                 
         # Translate ADD COLUMN to ADD COLUMN IF NOT EXISTS
         if "ADD COLUMN" in query.upper() and "IF NOT EXISTS" not in query.upper():
@@ -58,6 +69,14 @@ class PostgresCursorWrapper:
                 
         # Translate placeholder ? to %s
         query = query.replace("?", "%s")
+        return query
+
+    def execute(self, query, params=None):
+        # Translate PRAGMA
+        if "PRAGMA" in query.upper():
+            return
+            
+        query = self._translate(query)
         
         # Handle lastrowid for INSERT
         is_insert = query.strip().upper().startswith("INSERT")
@@ -84,12 +103,10 @@ class PostgresCursorWrapper:
                 pass
 
     def executemany(self, query, params_list):
-        if "INSERT OR IGNORE INTO" in query.upper():
-            query = query.replace("INSERT OR IGNORE INTO", "INSERT INTO")
-            if "USERS" in query.upper():
-                query = query.rstrip().rstrip(";") + " ON CONFLICT (username) DO NOTHING;"
-                
-        query = query.replace("?", "%s")
+        if "PRAGMA" in query.upper():
+            return
+            
+        query = self._translate(query)
         self.cursor.executemany(query, params_list)
 
     @property
@@ -308,11 +325,6 @@ def init_db():
 def seed_data(conn):
     cursor = conn.cursor()
 
-    # Check if data exists
-    cursor.execute("SELECT COUNT(*) FROM contacts")
-    if cursor.fetchone()[0] > 0:
-        return  # Already seeded
-
     # Seed Contacts (Clientes) with explicit IDs
     contacts = [
         (1, "RIPCONCIV CONSTRUCTORA", "1791234567001", "Av. Amazonas y Eloy Alfaro, Quito", "02-2900-100", "facturacion@ripconciv.com", 50000.0, 12450.0),
@@ -320,7 +332,7 @@ def seed_data(conn):
         (3, "HYDRIAPAC S.A.", "0998765432001", "Km 14.5 Vía a la Costa, Guayaquil", "04-2899-300", "contabilidad@hydriapac.com", 80000.0, 2784.0)
     ]
     cursor.executemany("""
-    INSERT INTO contacts (id, name, ruc, address, phone, email, credit_limit, current_balance)
+    INSERT OR IGNORE INTO contacts (id, name, ruc, address, phone, email, credit_limit, current_balance)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     """, contacts)
 
@@ -331,7 +343,7 @@ def seed_data(conn):
         (3, "MARIO PINTO", "1712806916", "Comité del Pueblo, Quito", "0995556666", "Activo")
     ]
     cursor.executemany("""
-    INSERT INTO drivers (id, name, dni, phone, address, status)
+    INSERT OR IGNORE INTO drivers (id, name, dni, phone, address, status)
     VALUES (?, ?, ?, ?, ?, ?)
     """, drivers)
 
@@ -349,7 +361,7 @@ def seed_data(conn):
         (10, "DESALOJO", 30.0, 40.594, 20.5, 50.5)
     ]
     cursor.executemany("""
-    INSERT INTO products (id, name, cost, margin, profit, price)
+    INSERT OR IGNORE INTO products (id, name, cost, margin, profit, price)
     VALUES (?, ?, ?, ?, ?, ?)
     """, products)
 
@@ -364,7 +376,7 @@ def seed_data(conn):
         ("RETROEXCAVADORA CASE #1", "Retroexcavadora", 2, 80.0, "Operativo", "2026-06-05")
     ]
     cursor.executemany("""
-    INSERT INTO machinery (plate_code, type, driver_id, accumulated_hours_km, maintenance_status, last_maintenance_date)
+    INSERT OR IGNORE INTO machinery (plate_code, type, driver_id, accumulated_hours_km, maintenance_status, last_maintenance_date)
     VALUES (?, ?, ?, ?, ?, ?)
     """, machinery)
 
@@ -374,7 +386,7 @@ def seed_data(conn):
         (2, 1, "2026-06-23", 6000.0, 15.0, 900.0, 120.0, 270.0, 6510.0, "Aprobada", "Autorizada", "Pago Parcial", 3000.0, 3510.0, "2306202601179123456700120010010000000021234567814")
     ]
     cursor.executemany("""
-    INSERT INTO invoices (id, client_id, invoice_date, subtotal, iva_percentage, iva, withholding_rent, withholding_iva, total, approval_status, sri_status, payment_status, amount_paid, amount_pending, sri_access_key)
+    INSERT OR IGNORE INTO invoices (id, client_id, invoice_date, subtotal, iva_percentage, iva, withholding_rent, withholding_iva, total, approval_status, sri_status, payment_status, amount_paid, amount_pending, sri_access_key)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, invoices)
 
@@ -412,7 +424,7 @@ def seed_data(conn):
     
     for g in all_guides:
         cursor.execute("""
-        INSERT INTO work_guides (guide_number, guide_date, description, quantity, unit, project, contact_id, plate_code, product_id, driver_id, signature_detected, hours_worked, billing_status, invoice_id)
+        INSERT OR IGNORE INTO work_guides (guide_number, guide_date, description, quantity, unit, project, contact_id, plate_code, product_id, driver_id, signature_detected, hours_worked, billing_status, invoice_id)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, g)
 
