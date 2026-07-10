@@ -34,6 +34,7 @@ let state = {
     approvalsFilterClient: "",
     approvalsSriFilterClient: "",
     collectionsFilterClient: "",
+    collectionsFilterStatus: "",
     cataloguesMachineryStatusFilter: "",
     schedules: [],
     planningYear: 2026,
@@ -2046,6 +2047,15 @@ function initCollectionsModule() {
         });
     }
 
+    // Add status filter change listener
+    const collectionsStatusFilter = document.getElementById("collections-filter-status");
+    if (collectionsStatusFilter) {
+        collectionsStatusFilter.addEventListener("change", (e) => {
+            state.collectionsFilterStatus = e.target.value;
+            renderCollectionsView();
+        });
+    }
+
     // Setup register payment form modal close triggers
     document.getElementById("btn-close-payment-modal").addEventListener("click", closePaymentModal);
     document.getElementById("btn-cancel-payment-modal").addEventListener("click", closePaymentModal);
@@ -2086,6 +2096,9 @@ function renderCollectionsView() {
     let approvedInvs = state.invoices.filter(i => i.approval_status === "Aprobada");
     if (state.collectionsFilterClient) {
         approvedInvs = approvedInvs.filter(i => String(i.client_id) === state.collectionsFilterClient);
+    }
+    if (state.collectionsFilterStatus) {
+        approvedInvs = approvedInvs.filter(i => i.payment_status === state.collectionsFilterStatus);
     }
     
     if (approvedInvs.length === 0) {

@@ -692,9 +692,17 @@
                         <div class="card">
                             <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
                                 <h3>Registrar Cobro de Facturas</h3>
-                                <select id="collections-filter-client" class="btn btn-outline" style="width:auto; height:32px; padding:0 8px; font-size:12px; margin:0; background-color: var(--bg-card); color: var(--text-primary); border-color: var(--border-color);">
-                                    <option value="">Todos los Clientes</option>
-                                </select>
+                                <div style="display:flex; gap:8px; align-items:center;">
+                                    <select id="collections-filter-client" class="btn btn-outline" style="width:auto; height:32px; padding:0 8px; font-size:12px; margin:0; background-color: var(--bg-card); color: var(--text-primary); border-color: var(--border-color);">
+                                        <option value="">Todos los Clientes</option>
+                                    </select>
+                                    <select id="collections-filter-status" class="btn btn-outline" style="width:auto; height:32px; padding:0 8px; font-size:12px; margin:0; background-color: var(--bg-card); color: var(--text-primary); border-color: var(--border-color);">
+                                        <option value="">Todos los Estados</option>
+                                        <option value="No Pagada">No Pagadas</option>
+                                        <option value="Pago Parcial">Pagos Parciales</option>
+                                        <option value="Pagada">Pagadas</option>
+                                    </select>
+                                </div>
                             </div>
                             <div class="card-body">
                                 <div class="table-responsive">
