@@ -1733,7 +1733,15 @@ function renderApprovalsTables() {
     if (drafts.length === 0) {
         approvalTbody.innerHTML = '<tr><td colspan="10" class="text-center text-muted">No hay facturas pendientes de aprobación.</td></tr>';
     } else {
+        let sumSubtotal = 0;
+        let sumIva = 0;
+        let sumTotal = 0;
+
         drafts.forEach(inv => {
+            sumSubtotal += inv.subtotal;
+            sumIva += inv.iva;
+            sumTotal += inv.total;
+
             const tr = document.createElement("tr");
             const role = sessionStorage.getItem("role");
             
@@ -1768,6 +1776,20 @@ function renderApprovalsTables() {
             `;
             approvalTbody.appendChild(tr);
         });
+
+        // Add summary row for drafts
+        const trSum = document.createElement("tr");
+        trSum.style.fontWeight = "bold";
+        trSum.style.backgroundColor = "rgba(255, 255, 255, 0.05)";
+        trSum.innerHTML = `
+            <td colspan="3" class="text-right text-muted" style="text-transform:uppercase; letter-spacing:0.5px; font-size:11px;">Subtotales Filtrados:</td>
+            <td class="text-right">${formatCurrency(sumSubtotal)}</td>
+            <td></td>
+            <td class="text-right">${formatCurrency(sumIva)}</td>
+            <td class="text-right text-emerald">${formatCurrency(sumTotal)}</td>
+            <td colspan="3"></td>
+        `;
+        approvalTbody.appendChild(trSum);
     }
 
     // Render SRI Emisión Table
@@ -1782,7 +1804,15 @@ function renderApprovalsTables() {
     if (approvedInvoices.length === 0) {
         sriTbody.innerHTML = '<tr><td colspan="10" class="text-center text-muted">No hay facturas listas para emitir al SRI.</td></tr>';
     } else {
+        let sumSubtotalApproved = 0;
+        let sumIvaApproved = 0;
+        let sumTotalApproved = 0;
+
         approvedInvoices.forEach(inv => {
+            sumSubtotalApproved += inv.subtotal;
+            sumIvaApproved += inv.iva;
+            sumTotalApproved += inv.total;
+
             const tr = document.createElement("tr");
             
             let btnAction = "";
@@ -1806,6 +1836,19 @@ function renderApprovalsTables() {
             `;
             sriTbody.appendChild(tr);
         });
+
+        // Add summary row for approved invoices
+        const trSum = document.createElement("tr");
+        trSum.style.fontWeight = "bold";
+        trSum.style.backgroundColor = "rgba(255, 255, 255, 0.05)";
+        trSum.innerHTML = `
+            <td colspan="3" class="text-right text-muted" style="text-transform:uppercase; letter-spacing:0.5px; font-size:11px;">Subtotales Filtrados:</td>
+            <td class="text-right">${formatCurrency(sumSubtotalApproved)}</td>
+            <td class="text-right">${formatCurrency(sumIvaApproved)}</td>
+            <td class="text-right text-emerald">${formatCurrency(sumTotalApproved)}</td>
+            <td colspan="4"></td>
+        `;
+        sriTbody.appendChild(trSum);
     }
 }
 
@@ -2104,7 +2147,15 @@ function renderCollectionsView() {
     if (approvedInvs.length === 0) {
         invTbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">No hay facturas aprobadas registradas.</td></tr>';
     } else {
+        let sumTotalColl = 0;
+        let sumPaidColl = 0;
+        let sumPendingColl = 0;
+
         approvedInvs.forEach(inv => {
+            sumTotalColl += inv.total;
+            sumPaidColl += inv.amount_paid;
+            sumPendingColl += inv.amount_pending;
+
             let statusClass = "danger";
             if (inv.payment_status === "Pagada") statusClass = "success";
             else if (inv.payment_status === "Pago Parcial") statusClass = "warning";
@@ -2125,6 +2176,19 @@ function renderCollectionsView() {
             `;
             invTbody.appendChild(tr);
         });
+
+        // Add summary row for collections
+        const trSum = document.createElement("tr");
+        trSum.style.fontWeight = "bold";
+        trSum.style.backgroundColor = "rgba(255, 255, 255, 0.05)";
+        trSum.innerHTML = `
+            <td colspan="2" class="text-right text-muted" style="text-transform:uppercase; letter-spacing:0.5px; font-size:11px;">Subtotales Filtrados:</td>
+            <td class="text-right">${formatCurrency(sumTotalColl)}</td>
+            <td class="text-right text-emerald">${formatCurrency(sumPaidColl)}</td>
+            <td class="text-right text-red">${formatCurrency(sumPendingColl)}</td>
+            <td colspan="2"></td>
+        `;
+        invTbody.appendChild(trSum);
     }
 }
 
