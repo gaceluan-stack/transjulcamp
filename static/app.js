@@ -31,6 +31,10 @@ let state = {
     filters: { client: "", plate: "", status: "" },
     dashboardFilters: { client: "", plate: "", driver: "", project: "" },
     dashboardSearchQuery: "",
+    approvalsFilterClient: "",
+    approvalsSriFilterClient: "",
+    collectionsFilterClient: "",
+    cataloguesMachineryStatusFilter: "",
     schedules: [],
     planningYear: 2026,
     planningMonth: 6, // July (0-indexed)
@@ -117,6 +121,7 @@ document.addEventListener("DOMContentLoaded", () => {
     initCollectionsModule();
     initCataloguesModule();
     initPlanningModule();
+    initKPIClickHandlers();
 
     // Check session on load
     checkAuth();
@@ -275,7 +280,10 @@ function populateDropdowns() {
         "db-filter-driver": state.drivers,
         "schedule-client": state.contacts,
         "schedule-driver": state.drivers,
-        "schedule-plate": state.machinery.map(m => ({ id: m.plate_code, name: `${m.plate_code} (${m.type})` }))
+        "schedule-plate": state.machinery.map(m => ({ id: m.plate_code, name: `${m.plate_code} (${m.type})` })),
+        "approvals-filter-client": state.contacts,
+        "approvals-sri-filter-client": state.contacts,
+        "collections-filter-client": state.contacts
     };
 
     for (const [id, list] of Object.entries(dropdowns)) {
@@ -397,6 +405,74 @@ function initThemeToggle() {
             btn.innerHTML = '<i class="fa-solid fa-sun"></i>';
         }
     });
+}
+
+function initKPIClickHandlers() {
+    const cardBilled = document.getElementById("kpi-card-billed");
+    const cardPending = document.getElementById("kpi-card-pending");
+    const cardMachinery = document.getElementById("kpi-card-machinery");
+    const cardUnbilled = document.getElementById("kpi-card-unbilled");
+
+    if (cardBilled) {
+        cardBilled.addEventListener("click", () => {
+            // Target: Approvals -> SRI invoices
+            // Set client filter to dashboard client filter
+            const dbClient = state.dashboardFilters.client;
+            state.approvalsSriFilterClient = dbClient;
+            const filterSriEl = document.getElementById("approvals-sri-filter-client");
+            if (filterSriEl) filterSriEl.value = dbClient;
+            
+            switchTab("approvals");
+            document.getElementById("tab-invoices-sri").click();
+        });
+    }
+
+    if (cardPending) {
+        cardPending.addEventListener("click", () => {
+            // Target: Collections
+            // Set client filter to dashboard client filter
+            const dbClient = state.dashboardFilters.client;
+            state.collectionsFilterClient = dbClient;
+            const filterCollEl = document.getElementById("collections-filter-client");
+            if (filterCollEl) filterCollEl.value = dbClient;
+            
+            switchTab("collections");
+        });
+    }
+
+    if (cardMachinery) {
+        cardMachinery.addEventListener("click", () => {
+            // Target: Catalogues -> Machinery
+            // Set machinery status filter to "Operativo"
+            state.cataloguesMachineryStatusFilter = "Operativo";
+            const filterMachEl = document.getElementById("catalog-machinery-status-filter");
+            if (filterMachEl) filterMachEl.value = "Operativo";
+            
+            switchTab("catalogues");
+            document.getElementById("tab-crud-machinery").click();
+        });
+    }
+
+    if (cardUnbilled) {
+        cardUnbilled.addEventListener("click", () => {
+            // Target: Reports
+            // Set client/plate to dashboard filters and status to "Pendiente"
+            state.filters.client = state.dashboardFilters.client;
+            state.filters.plate = state.dashboardFilters.plate;
+            state.filters.status = "Pendiente";
+            
+            const filterClientEl = document.getElementById("filter-client");
+            if (filterClientEl) filterClientEl.value = state.filters.client;
+            
+            const filterPlateEl = document.getElementById("filter-plate");
+            if (filterPlateEl) filterPlateEl.value = state.filters.plate;
+            
+            const filterStatusEl = document.getElementById("filter-status");
+            if (filterStatusEl) filterStatusEl.value = "Pendiente";
+            
+            switchTab("reports");
+        });
+    }
 }
 
 // ==========================================================================
@@ -1588,6 +1664,23 @@ function exportGridToPDF() {
 // ==========================================================================
 
 function initApprovalsModule() {
+    // Add client filter change listeners
+    const approvalsFilter = document.getElementById("approvals-filter-client");
+    if (approvalsFilter) {
+        approvalsFilter.addEventListener("change", (e) => {
+            state.approvalsFilterClient = e.target.value;
+            renderApprovalsTables();
+        });
+    }
+
+    const approvalsSriFilter = document.getElementById("approvals-sri-filter-client");
+    if (approvalsSriFilter) {
+        approvalsSriFilter.addEventListener("change", (e) => {
+            state.approvalsSriFilterClient = e.target.value;
+            renderApprovalsTables();
+        });
+    }
+
     // Setup Modal SRI RIDE buttons
     document.getElementById("btn-close-ride-modal").addEventListener("click", closeRideModal);
     document.getElementById("btn-close-ride-modal-footer").addEventListener("click", closeRideModal);
@@ -1631,7 +1724,11 @@ function renderApprovalsTables() {
     const approvalTbody = document.getElementById("tbl-approval-body");
     approvalTbody.innerHTML = "";
     
-    const drafts = state.invoices.filter(i => i.approval_status === "Pendiente");
+    let drafts = state.invoices.filter(i => i.approval_status === "Pendiente");
+    if (state.approvalsFilterClient) {
+        drafts = drafts.filter(i => String(i.client_id) === state.approvalsFilterClient);
+    }
+    
     if (drafts.length === 0) {
         approvalTbody.innerHTML = '<tr><td colspan="10" class="text-center text-muted">No hay facturas pendientes de aprobación.</td></tr>';
     } else {
@@ -1676,7 +1773,11 @@ function renderApprovalsTables() {
     const sriTbody = document.getElementById("tbl-sri-body");
     sriTbody.innerHTML = "";
 
-    const approvedInvoices = state.invoices.filter(i => i.approval_status === "Aprobada");
+    let approvedInvoices = state.invoices.filter(i => i.approval_status === "Aprobada");
+    if (state.approvalsSriFilterClient) {
+        approvedInvoices = approvedInvoices.filter(i => String(i.client_id) === state.approvalsSriFilterClient);
+    }
+    
     if (approvedInvoices.length === 0) {
         sriTbody.innerHTML = '<tr><td colspan="10" class="text-center text-muted">No hay facturas listas para emitir al SRI.</td></tr>';
     } else {
@@ -1936,6 +2037,15 @@ function downloadXML() {
 // ==========================================================================
 
 function initCollectionsModule() {
+    // Add client filter change listener
+    const collectionsFilter = document.getElementById("collections-filter-client");
+    if (collectionsFilter) {
+        collectionsFilter.addEventListener("change", (e) => {
+            state.collectionsFilterClient = e.target.value;
+            renderCollectionsView();
+        });
+    }
+
     // Setup register payment form modal close triggers
     document.getElementById("btn-close-payment-modal").addEventListener("click", closePaymentModal);
     document.getElementById("btn-cancel-payment-modal").addEventListener("click", closePaymentModal);
@@ -1949,7 +2059,12 @@ function renderCollectionsView() {
     const portfolioTbody = document.getElementById("tbl-portfolio-body");
     portfolioTbody.innerHTML = "";
 
-    state.contacts.forEach(c => {
+    let contactsToRender = state.contacts;
+    if (state.collectionsFilterClient) {
+        contactsToRender = contactsToRender.filter(c => String(c.id) === state.collectionsFilterClient);
+    }
+
+    contactsToRender.forEach(c => {
         const available = c.credit_limit - c.current_balance;
         const availableClass = available >= 0 ? "text-emerald" : "text-red";
         
@@ -1968,7 +2083,10 @@ function renderCollectionsView() {
     invTbody.innerHTML = "";
 
     // Show only approved invoices that still have pending balances or are fully paid (to see history)
-    const approvedInvs = state.invoices.filter(i => i.approval_status === "Aprobada");
+    let approvedInvs = state.invoices.filter(i => i.approval_status === "Aprobada");
+    if (state.collectionsFilterClient) {
+        approvedInvs = approvedInvs.filter(i => String(i.client_id) === state.collectionsFilterClient);
+    }
     
     if (approvedInvs.length === 0) {
         invTbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">No hay facturas aprobadas registradas.</td></tr>';
@@ -2120,6 +2238,15 @@ function initCataloguesModule() {
 
     document.getElementById("form-client").addEventListener("submit", handleClientSave);
     document.getElementById("btn-client-reset").addEventListener("click", resetClientForm);
+
+    // 3. Machinery catalog status filter
+    const statusFilter = document.getElementById("catalog-machinery-status-filter");
+    if (statusFilter) {
+        statusFilter.addEventListener("change", (e) => {
+            state.cataloguesMachineryStatusFilter = e.target.value;
+            renderCataloguesTables();
+        });
+    }
 }
 
 function renderCataloguesTables() {
@@ -2167,7 +2294,13 @@ function renderCataloguesTables() {
     // Render Machinery CRUD Table
     const machTbody = document.getElementById("tbl-machinery-body");
     machTbody.innerHTML = "";
-    state.machinery.forEach(m => {
+    
+    let machineryToRender = state.machinery;
+    if (state.cataloguesMachineryStatusFilter) {
+        machineryToRender = machineryToRender.filter(m => m.maintenance_status === state.cataloguesMachineryStatusFilter);
+    }
+    
+    machineryToRender.forEach(m => {
         let statusClass = "success";
         if (m.maintenance_status === "Mantenimiento") statusClass = "warning";
         else if (m.maintenance_status === "Reparación") statusClass = "danger";

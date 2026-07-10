@@ -170,7 +170,7 @@
                     
                     <!-- KPI Cards Grid -->
                     <div class="kpi-grid">
-                        <div class="kpi-card purple">
+                        <div class="kpi-card purple" id="kpi-card-billed">
                             <div class="kpi-icon"><i class="fa-solid fa-file-invoice-dollar"></i></div>
                             <div class="kpi-details">
                                 <span class="kpi-title">Total Facturado</span>
@@ -178,7 +178,7 @@
                                 <span class="kpi-trend"><i class="fa-solid fa-circle-check"></i> Facturas aprobadas</span>
                             </div>
                         </div>
-                        <div class="kpi-card orange">
+                        <div class="kpi-card orange" id="kpi-card-pending">
                             <div class="kpi-icon"><i class="fa-solid fa-wallet"></i></div>
                             <div class="kpi-details">
                                 <span class="kpi-title">Cartera por Cobrar</span>
@@ -186,7 +186,7 @@
                                 <span class="kpi-trend"><i class="fa-solid fa-clock"></i> Saldos pendientes</span>
                             </div>
                         </div>
-                        <div class="kpi-card emerald">
+                        <div class="kpi-card emerald" id="kpi-card-machinery">
                             <div class="kpi-icon"><i class="fa-solid fa-screwdriver-wrench"></i></div>
                             <div class="kpi-details">
                                 <span class="kpi-title">Maquinarias Activas</span>
@@ -194,7 +194,7 @@
                                 <span class="kpi-trend"><i class="fa-solid fa-circle-up"></i> Estado operativo</span>
                             </div>
                         </div>
-                        <div class="kpi-card blue">
+                        <div class="kpi-card blue" id="kpi-card-unbilled">
                             <div class="kpi-icon"><i class="fa-solid fa-file-circle-plus"></i></div>
                             <div class="kpi-details">
                                 <span class="kpi-title">Guías sin Facturar</span>
@@ -588,8 +588,11 @@
                     <!-- SUB-VIEW 4A: Bandeja de Aprobaciones (Supervisor) -->
                     <div id="subview-invoices-approval" class="subtab-panel active">
                         <div class="card">
-                            <div class="card-header">
+                            <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
                                 <h3>Pre-Facturas Pendientes de Autorización</h3>
+                                <select id="approvals-filter-client" class="btn btn-outline" style="width:auto; height:32px; padding:0 8px; font-size:12px; margin:0; background-color: var(--bg-card); color: var(--text-primary); border-color: var(--border-color);">
+                                    <option value="">Todos los Clientes</option>
+                                </select>
                             </div>
                             <div class="card-body">
                                 <div class="table-responsive">
@@ -620,8 +623,11 @@
                     <!-- SUB-VIEW 4B: Bandeja de Emisión SRI (Facturador) -->
                     <div id="subview-invoices-sri" class="subtab-panel">
                         <div class="card">
-                            <div class="card-header">
+                            <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
                                 <h3>Facturas Listas para Envío Electrónico al SRI</h3>
+                                <select id="approvals-sri-filter-client" class="btn btn-outline" style="width:auto; height:32px; padding:0 8px; font-size:12px; margin:0; background-color: var(--bg-card); color: var(--text-primary); border-color: var(--border-color);">
+                                    <option value="">Todos los Clientes</option>
+                                </select>
                             </div>
                             <div class="card-body">
                                 <div class="table-responsive">
@@ -684,8 +690,11 @@
 
                         <!-- Right: Listado de Facturas y Cobro -->
                         <div class="card">
-                            <div class="card-header">
+                            <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
                                 <h3>Registrar Cobro de Facturas</h3>
+                                <select id="collections-filter-client" class="btn btn-outline" style="width:auto; height:32px; padding:0 8px; font-size:12px; margin:0; background-color: var(--bg-card); color: var(--text-primary); border-color: var(--border-color);">
+                                    <option value="">Todos los Clientes</option>
+                                </select>
                             </div>
                             <div class="card-body">
                                 <div class="table-responsive">
@@ -913,9 +922,15 @@
                             </div>
 
                             <div class="table-side card">
-                                <div class="card-header">
-                                    <h3>Flota y Equipos</h3>
-                                </div>
+                                <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                                <h3>Flota y Equipos</h3>
+                                <select id="catalog-machinery-status-filter" class="btn btn-outline" style="width:auto; height:32px; padding:0 8px; font-size:12px; margin:0; background-color: var(--bg-card); color: var(--text-primary); border-color: var(--border-color);">
+                                    <option value="">Todos los Estados</option>
+                                    <option value="Operativo">Operativo</option>
+                                    <option value="Mantenimiento">Mantenimiento</option>
+                                    <option value="Reparación">Reparación</option>
+                                </select>
+                            </div>
                                 <div class="card-body">
                                     <table class="grid-table">
                                         <thead>

@@ -1,4 +1,7 @@
 import os
+# Force tests to run against clean local SQLite database instead of cloud Supabase
+os.environ["SUPABASE_DB_URL"] = ""
+
 import unittest
 from fastapi.testclient import TestClient
 
@@ -8,6 +11,10 @@ sys.path.append(os.path.dirname(__file__))
 
 from backend.main import app
 from backend.database import init_db
+
+# Delete SUPABASE_DB_URL to force all tests and API requests to use SQLite
+if "SUPABASE_DB_URL" in os.environ:
+    del os.environ["SUPABASE_DB_URL"]
 
 class TestTransjulcampBackend(unittest.TestCase):
     
