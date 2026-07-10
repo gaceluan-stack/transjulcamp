@@ -921,6 +921,58 @@ function initOCRModule() {
     });
 }
 
+function compressImage(file) {
+    return new Promise((resolve) => {
+        if (!file.type.startsWith("image/")) {
+            resolve(file); // Keep PDFs as-is
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement("canvas");
+                let width = img.width;
+                let height = img.height;
+
+                // Max dimension for OCR clarity (1200px is perfect)
+                const maxDim = 1200;
+                if (width > height) {
+                    if (width > maxDim) {
+                        height = Math.round((height * maxDim) / width);
+                        width = maxDim;
+                    }
+                } else {
+                    if (height > maxDim) {
+                        width = Math.round((width * maxDim) / height);
+                        height = maxDim;
+                    }
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext("2d");
+                ctx.drawImage(img, 0, 0, width, height);
+
+                canvas.toBlob((blob) => {
+                    if (blob) {
+                        const compressedFile = new File([blob], file.name, {
+                            type: "image/jpeg",
+                            lastModified: Date.now()
+                        });
+                        resolve(compressedFile);
+                    } else {
+                        resolve(file);
+                    }
+                }, "image/jpeg", 0.75); // 75% quality is optimal balance of small file size & high OCR accuracy
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
 async function handleUploadedFiles(files) {
     const fileList = Array.from(files);
     if (fileList.length === 0) return;
@@ -930,7 +982,10 @@ async function handleUploadedFiles(files) {
     previewContainer.style.display = "none";
     dropzonePrompt.style.display = "flex";
 
-    const newItems = fileList.map(file => {
+    // Compress all images in parallel
+    const compressedFiles = await Promise.all(fileList.map(file => compressImage(file)));
+
+    const newItems = compressedFiles.map(file => {
         const id = Date.now() + Math.random();
         const previewUrl = URL.createObjectURL(file);
         return {

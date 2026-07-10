@@ -316,6 +316,24 @@ def init_db():
         except Exception:
             pass  # Column already exists
 
+    # 9. Indexes for Query Performance Optimization
+    indexes = [
+        ("idx_work_guides_contact", "work_guides(contact_id)"),
+        ("idx_work_guides_plate", "work_guides(plate_code)"),
+        ("idx_work_guides_product", "work_guides(product_id)"),
+        ("idx_work_guides_driver", "work_guides(driver_id)"),
+        ("idx_work_guides_invoice", "work_guides(invoice_id)"),
+        ("idx_invoices_client", "invoices(client_id)"),
+        ("idx_schedules_driver", "schedules(driver_id)"),
+        ("idx_schedules_plate", "schedules(plate_code)"),
+        ("idx_schedules_contact", "schedules(contact_id)")
+    ]
+    for idx_name, idx_target in indexes:
+        try:
+            cursor.execute(f"CREATE INDEX IF NOT EXISTS {idx_name} ON {idx_target};")
+        except Exception as e:
+            logger.error(f"Error creating index {idx_name}: {e}")
+
     conn.commit()
     seed_data(conn)
     conn.close()
