@@ -111,6 +111,7 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("btn-logout").addEventListener("click", () => {
         sessionStorage.clear();
         checkAuth();
+        showWakingLoader = true;
         switchTab("dashboard");
     });
 
@@ -226,6 +227,8 @@ async function refreshAllData() {
             renderPlanningCalendar();
         }
 
+        // Disable waking loader overlay once app is successfully loaded
+        showWakingLoader = false;
     } catch (err) {
         console.error("Error refreshing application data:", err);
     }
@@ -235,6 +238,7 @@ async function refreshAllData() {
 
 let activeRequestsCount = 0;
 let wakingOverlayTimeout = null;
+let showWakingLoader = true;
 
 function showWakingOverlayIfNeeded() {
     if (activeRequestsCount > 0) {
@@ -253,9 +257,12 @@ function hideWakingOverlay() {
 }
 
 async function fetchAPI(endpoint, options = {}) {
-    activeRequestsCount++;
-    if (!wakingOverlayTimeout) {
-        wakingOverlayTimeout = setTimeout(showWakingOverlayIfNeeded, 800);
+    const useOverlay = showWakingLoader;
+    if (useOverlay) {
+        activeRequestsCount++;
+        if (!wakingOverlayTimeout) {
+            wakingOverlayTimeout = setTimeout(showWakingOverlayIfNeeded, 800);
+        }
     }
 
     try {
@@ -277,13 +284,15 @@ async function fetchAPI(endpoint, options = {}) {
         }
         return await res.json();
     } finally {
-        activeRequestsCount--;
-        if (activeRequestsCount === 0) {
-            if (wakingOverlayTimeout) {
-                clearTimeout(wakingOverlayTimeout);
-                wakingOverlayTimeout = null;
+        if (useOverlay) {
+            activeRequestsCount--;
+            if (activeRequestsCount === 0) {
+                if (wakingOverlayTimeout) {
+                    clearTimeout(wakingOverlayTimeout);
+                    wakingOverlayTimeout = null;
+                }
+                hideWakingOverlay();
             }
-            hideWakingOverlay();
         }
     }
 }
