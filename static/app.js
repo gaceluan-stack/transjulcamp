@@ -233,24 +233,59 @@ async function refreshAllData() {
 
 // --- UTILITIES ---
 
+let activeRequestsCount = 0;
+let wakingOverlayTimeout = null;
+
+function showWakingOverlayIfNeeded() {
+    if (activeRequestsCount > 0) {
+        const overlay = document.getElementById("waking-server-overlay");
+        if (overlay) {
+            overlay.style.display = "flex";
+        }
+    }
+}
+
+function hideWakingOverlay() {
+    const overlay = document.getElementById("waking-server-overlay");
+    if (overlay) {
+        overlay.style.display = "none";
+    }
+}
+
 async function fetchAPI(endpoint, options = {}) {
-    const token = sessionStorage.getItem("token");
-    if (token) {
-        if (!options.headers) options.headers = {};
-        options.headers["Authorization"] = `Bearer ${token}`;
+    activeRequestsCount++;
+    if (!wakingOverlayTimeout) {
+        wakingOverlayTimeout = setTimeout(showWakingOverlayIfNeeded, 800);
     }
-    const url = `${API_BASE}${endpoint}`;
-    const res = await fetch(url, options);
-    if (res.status === 401) {
-        sessionStorage.clear();
-        checkAuth();
-        throw new Error("Sesión expirada. Inicie sesión nuevamente.");
+
+    try {
+        const token = sessionStorage.getItem("token");
+        if (token) {
+            if (!options.headers) options.headers = {};
+            options.headers["Authorization"] = `Bearer ${token}`;
+        }
+        const url = `${API_BASE}${endpoint}`;
+        const res = await fetch(url, options);
+        if (res.status === 401) {
+            sessionStorage.clear();
+            checkAuth();
+            throw new Error("Sesión expirada. Inicie sesión nuevamente.");
+        }
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({ detail: "Unknown error occurred" }));
+            throw new Error(err.detail || res.statusText);
+        }
+        return await res.json();
+    } finally {
+        activeRequestsCount--;
+        if (activeRequestsCount === 0) {
+            if (wakingOverlayTimeout) {
+                clearTimeout(wakingOverlayTimeout);
+                wakingOverlayTimeout = null;
+            }
+            hideWakingOverlay();
+        }
     }
-    if (!res.ok) {
-        const err = await res.json().catch(() => ({ detail: "Unknown error occurred" }));
-        throw new Error(err.detail || res.statusText);
-    }
-    return res.json();
 }
 
 function updateAlertBadges() {

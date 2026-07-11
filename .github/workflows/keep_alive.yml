@@ -1,0 +1,14 @@
+name: Keep Alive Backend
+
+on:
+  schedule:
+    - cron: '*/10 * * * *' # Runs every 10 minutes
+  workflow_dispatch: # Allows manual trigger from GitHub UI
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Render Backend
+        run: |
+          curl -s -o /dev/null -w "%{http_code}" https://transjulcamp.onrender.com/health

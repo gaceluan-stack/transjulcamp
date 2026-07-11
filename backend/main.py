@@ -185,6 +185,10 @@ async def db_session_middleware(request: Request, call_next):
     response = await call_next(request)
     return response
 
+@app.get("/health")
+def health_check():
+    return {"status": "healthy", "service": "transjulcamp"}
+
 # --- AUTH ENDPOINTS ---
 
 @app.post("/api/login")
