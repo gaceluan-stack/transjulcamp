@@ -334,6 +334,14 @@ def init_db():
         except Exception as e:
             logger.error(f"Error creating index {idx_name}: {e}")
 
+    # 10. Enable Row Level Security (RLS) for Supabase Security Advisor compliance
+    tables = ["drivers", "machinery", "contacts", "invoices", "work_guides", "products", "users", "schedules"]
+    for table in tables:
+        try:
+            cursor.execute(f"ALTER TABLE {table} ENABLE ROW LEVEL SECURITY;")
+        except Exception:
+            pass  # SQLite ignores RLS or table already enabled
+
     conn.commit()
     seed_data(conn)
     conn.close()
