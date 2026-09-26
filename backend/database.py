@@ -159,15 +159,18 @@ DATABASE_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "db", "
 def get_connection():
     supabase_url = os.getenv("SUPABASE_DB_URL")
     if supabase_url:
-        conn = psycopg2.connect(supabase_url)
-        return PostgresConnectionWrapper(conn)
-    else:
-        db_dir = os.path.dirname(DATABASE_PATH)
-        if not os.path.exists(db_dir):
-            os.makedirs(db_dir)
-        conn = sqlite3.connect(DATABASE_PATH)
-        conn.row_factory = sqlite3.Row
-        return conn
+        try:
+            conn = psycopg2.connect(supabase_url)
+            return PostgresConnectionWrapper(conn)
+        except Exception as e:
+            print(f"Advertencia: No se pudo conectar a Supabase ({e}). Usando base de datos SQLite local...")
+    
+    db_dir = os.path.dirname(DATABASE_PATH)
+    if not os.path.exists(db_dir):
+        os.makedirs(db_dir)
+    conn = sqlite3.connect(DATABASE_PATH)
+    conn.row_factory = sqlite3.Row
+    return conn
 
 def init_db():
     conn = get_connection()
@@ -479,7 +482,7 @@ def seed_data(conn):
         """, schedules)
 
     # Update PostgreSQL serial sequences to match max explicit IDs
-    if os.getenv("SUPABASE_DB_URL"):
+    if isinstance(conn, PostgresConnectionWrapper):
         cursor.execute("SELECT setval('contacts_id_seq', (SELECT MAX(id) FROM contacts));")
         cursor.execute("SELECT setval('drivers_id_seq', (SELECT MAX(id) FROM drivers));")
         cursor.execute("SELECT setval('products_id_seq', (SELECT MAX(id) FROM products));")
